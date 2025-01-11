@@ -1,0 +1,70 @@
+import os
+import numpy as np
+import cv2
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report, accuracy_score
+
+# Set paths to the dataset (update with your paths)
+CAT_DOG_DIR = "path/to/dataset"
+CATEGORIES = ["Cat", "Dog"]
+
+# Parameters
+IMG_SIZE = 64  # Resize images to 64x64 for processing
+
+# Load and preprocess the dataset
+def load_data():
+    data = []
+    labels = []
+
+    for category in CATEGORIES:
+        path = os.path.join(CAT_DOG_DIR, category)
+        label = CATEGORIES.index(category)  # 0 for Cat, 1 for Dog
+
+        for img_name in os.listdir(path):
+            img_path = os.path.join(path, img_name)
+            try:
+                img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+                img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
+                data.append(img)
+                labels.append(label)
+            except Exception as e:
+                print(f"Error loading image {img_name}: {e}")
+
+    return np.array(data), np.array(labels)
+
+# Feature extraction (flatten images for SVM input)
+def preprocess_features(images):
+    return images.reshape(len(images), -1)  # Flatten 3D images to 1D vectors
+
+# Load the data
+print("Loading data...")
+data, labels = load_data()
+
+# Normalize pixel values to [0, 1]
+data = data / 255.0
+
+# Preprocess features
+features = preprocess_features(data)
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
+
+# Train an SVM classifier
+print("Training SVM model...")
+svm = SVC(kernel='linear', C=1.0, random_state=42)
+svm.fit(X_train, y_train)
+
+# Predict on the test set
+print("Evaluating model...")
+y_pred = svm.predict(X_test)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy * 100:.2f}%")
+print("Classification Report:\n", classification_report(y_test, y_pred, target_names=CATEGORIES))
+
+# Save the model (optional)
+import joblib
+joblib.dump(svm, "svm_cats_dogs_model.pkl")
+print("Model saved as svm_cats_dogs_model.pkl")
