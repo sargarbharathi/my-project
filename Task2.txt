@@ -1,0 +1,58 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+# Sample dataset (replace this with your dataset)
+data = {
+    'CustomerID': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    'AnnualSpending': [15000, 18000, 24000, 30000, 32000, 40000, 60000, 70000, 80000, 90000],
+    'VisitsPerYear': [5, 7, 6, 12, 15, 20, 25, 30, 35, 40],
+    'ProductsPurchased': [10, 12, 15, 20, 22, 25, 40, 50, 60, 70]
+}
+
+# Convert the data into a DataFrame
+df = pd.DataFrame(data)
+
+# Features for clustering
+X = df[['AnnualSpending', 'VisitsPerYear', 'ProductsPurchased']]
+
+# Standardize the data
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Determine the optimal number of clusters using the elbow method
+inertia = []
+k_values = range(1, 11)
+for k in k_values:
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    kmeans.fit(X_scaled)
+    inertia.append(kmeans.inertia_)
+
+# Plot the elbow curve
+plt.figure(figsize=(8, 5))
+plt.plot(k_values, inertia, marker='o')
+plt.title('Elbow Method for Optimal K')
+plt.xlabel('Number of Clusters (k)')
+plt.ylabel('Inertia')
+plt.show()
+
+# Apply K-means with the optimal number of clusters (e.g., k=3)
+kmeans = KMeans(n_clusters=3, random_state=42)
+labels = kmeans.fit_predict(X_scaled)
+
+# Add cluster labels to the original dataset
+df['Cluster'] = labels
+
+# Print the clustered data
+print(df)
+
+# Visualize the clusters in 2D space (using the first two features)
+plt.figure(figsize=(8, 5))
+plt.scatter(X_scaled[:, 0], X_scaled[:, 1], c=labels, cmap='viridis', s=100)
+plt.title('Customer Clusters')
+plt.xlabel('Annual Spending (scaled)')
+plt.ylabel('Visits Per Year (scaled)')
+plt.colorbar(label='Cluster')
+plt.show()
